@@ -152,11 +152,21 @@ def call_gemini(
         max_output_tokens=max_tokens,
     )
     start_time = time.time()
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=config,
-    )
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=config,
+        )
+    except Exception as e:
+        if "404" in str(e) or "NOT_FOUND" in str(e):
+            response = client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents=prompt,
+                config=config,
+            )
+        else:
+            raise
     latency = time.time() - start_time
 
     text = getattr(response, "text", "") or ""
@@ -354,7 +364,21 @@ def streaming_chatbot() -> None:
                 full_response += chunk_text
             print()
         except Exception as e:
-            print(f"\n[Error streaming response: {e}]")
+            if "404" in str(e) or "NOT_FOUND" in str(e):
+                try:
+                    response_stream = client.models.generate_content_stream(
+                        model="gemini-3.5-flash",
+                        contents=formatted_history,
+                    )
+                    for chunk in response_stream:
+                        chunk_text = getattr(chunk, "text", "") or ""
+                        print(chunk_text, end="", flush=True)
+                        full_response += chunk_text
+                    print()
+                except Exception as inner_e:
+                    print(f"\n[Error streaming response: {inner_e}]")
+            else:
+                print(f"\n[Error streaming response: {e}]")
 
         history.append({"role": "model", "parts": [{"text": full_response}]})
 
