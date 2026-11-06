@@ -10,9 +10,17 @@ Instructions:
 """
 
 import os
+import sys
 import time
 from typing import Any, Callable
 from dotenv import load_dotenv
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 load_dotenv()
 
@@ -338,6 +346,12 @@ def streaming_chatbot() -> None:
 
     client = genai.Client(api_key=api_key)
     history: list[dict] = []
+
+    print("=========================================================")
+    print("🤖 Vin Smart Future - Intelligent Chat Assistant")
+    print("Powered by Google Gemini 2.5 Flash")
+    print("Type 'quit' or 'exit' to end the session.")
+    print("=========================================================\n")
 
     while True:
         try:
